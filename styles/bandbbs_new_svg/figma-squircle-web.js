@@ -171,7 +171,7 @@
     window.initFigmaSquircles = function () {
         document.querySelectorAll('.figma-squircle').forEach(function (el) {
             var radius = parseFloat(el.dataset.cornerRadius) || 16;
-            var smoothing = parseFloat(el.dataset.smoothing) || 1;
+            var smoothing = parseFloat(el.dataset.smoothing) || 0.6;
             window.applyFigmaSquircle(el, radius, smoothing);
         });
     };
