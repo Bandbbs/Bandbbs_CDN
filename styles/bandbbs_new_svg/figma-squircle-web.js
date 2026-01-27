@@ -139,7 +139,7 @@
         var r = circleSize / 2;
         var cy = height / 2;
 
-        var rMid = minSide * 0.3;
+        var rMid = minSide * 0.28;
         var rOuter = minSide * 0.5;
         var midWidth = width - (rOuter - rMid) * 2;
         if (midWidth < 0) midWidth = 0;
