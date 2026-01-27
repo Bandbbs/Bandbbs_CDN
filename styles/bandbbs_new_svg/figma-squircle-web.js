@@ -1,6 +1,6 @@
 // figma-squircle-web.js
-// 适用于 XenForo 的 Figma 平滑圆角实现（clip-path）
-// 圆角固定为 16px，自动适配任意宽高
+// 适用于网页的 Figma 平滑圆角实现（clip-path）
+// 26.1.27: 支持平滑横向胶囊！
 
 (function () {
     'use strict';
@@ -133,6 +133,56 @@
         });
     }
 
+    function getSmoothCapsulePath(width, height, cornerSmoothing) {
+        var minSide = height;
+        var circleSize = minSide * 0.98;
+        var r = circleSize / 2;
+        var cy = height / 2;
+
+        var rMid = minSide * 0.3;
+        var rOuter = minSide * 0.5;
+        var midWidth = width - (rOuter - rMid) * 2;
+        if (midWidth < 0) midWidth = 0;
+
+        var midPath = getSquirclePath(
+            midWidth,
+            height,
+            rMid,
+            cornerSmoothing
+        );
+
+        var midX = (width - midWidth) / 2;
+        var translatedMidPath = midPath.replace(
+            /([MLCA])\s*([-\d.]+)\s+([-\d.]+)/g,
+            function (_, cmd, x, y) {
+                return cmd + ' ' + f(parseFloat(x) + midX) + ' ' + y;
+            }
+        );
+
+        var leftCx = r;
+        var rightCx = width - r;
+
+        var leftCirclePath = [
+            'M', f(leftCx + r), f(cy),
+            'A', f(r), f(r), '0 1 0', f(leftCx - r), f(cy),
+            'A', f(r), f(r), '0 1 0', f(leftCx + r), f(cy),
+            'Z'
+        ].join(' ');
+
+        var rightCirclePath = [
+            'M', f(rightCx + r), f(cy),
+            'A', f(r), f(r), '0 1 0', f(rightCx - r), f(cy),
+            'A', f(r), f(r), '0 1 0', f(rightCx + r), f(cy),
+            'Z'
+        ].join(' ');
+
+        return {
+            left: leftCirclePath,
+            middle: translatedMidPath,
+            right: rightCirclePath
+        };
+    }
+
     window.applyFigmaSquircle = function (element, cornerRadius, cornerSmoothing) {
         if (cornerRadius === undefined) cornerRadius = 16;
         if (cornerSmoothing === undefined) cornerSmoothing = 1;
@@ -143,24 +193,40 @@
 
         if (width <= 0 || height <= 0) return;
 
-        var pathData = getSquirclePath(width, height, cornerRadius, cornerSmoothing);
+        var isCapsule = cornerRadius >= height / 2 && width > height;
+
+        var pathData = isCapsule
+            ? getSmoothCapsulePath(width, height, cornerSmoothing)
+            : getSquirclePath(width, height, cornerRadius, cornerSmoothing);
+
         var id = 'squircle-' + Math.random().toString(36).substr(2, 9);
 
         var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', '0');
-        svg.setAttribute('height', '0');
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
         svg.style.position = 'absolute';
         svg.style.pointerEvents = 'none';
 
         var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
         clipPath.setAttribute('id', id);
-        clipPath.setAttribute('clipPathUnits', 'objectBoundingBox');
+        clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
 
-        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathData);
-        path.setAttribute('transform', 'scale(' + (1 / width) + ' ' + (1 / height) + ')');
+        if (isCapsule) {
+            var paths = pathData; // 现在是 { left, middle, right }
 
-        clipPath.appendChild(path);
+            ['left', 'middle', 'right'].forEach(function (key) {
+                var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                p.setAttribute('d', paths[key]);
+                p.setAttribute('fill', 'white');
+                clipPath.appendChild(p);
+            });
+        } else {
+            var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p.setAttribute('d', pathData);
+            p.setAttribute('fill', 'white');
+            clipPath.appendChild(p);
+        }
+
         svg.appendChild(clipPath);
         document.body.appendChild(svg);
 
