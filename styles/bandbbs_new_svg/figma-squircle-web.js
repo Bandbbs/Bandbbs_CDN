@@ -202,8 +202,8 @@
         var id = 'squircle-' + Math.random().toString(36).substr(2, 9);
 
         var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
+        svg.setAttribute('width', '0');
+        svg.setAttribute('height', '0');
         svg.style.position = 'absolute';
         svg.style.pointerEvents = 'none';
 
